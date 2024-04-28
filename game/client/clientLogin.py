@@ -27,6 +27,7 @@ def sendLogin(ms):
 
 def openGame():
 
+    print("Receiving")
     data = client.recv(4096)
     received = data.decode(FORMAT)
     splitted = received.split()

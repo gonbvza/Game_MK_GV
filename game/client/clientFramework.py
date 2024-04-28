@@ -6,6 +6,11 @@ def loginUser():
     #        - resend the HELLO-FROM if resposne completely lost
     #        - if username taken change username and send again
     #        - agree on protocol for this part (who sends what messages in case of errors)
+
+    #<== Implementation ==>#
+    # I did this in the file "clientLogin.py"
+    # The file opens a pygame window with a text input box where the user types his name (max 4 characters) and sends the message HELLO-FROM <name> to the server
+    # If it receives HELLO <name> opens the main menu
     return
 
 def mainMenu():
