@@ -25,7 +25,8 @@ def main():
     
     while(True):
         clientData, clientAddress =  UDPServerSocket.recvfrom(1024)
-        clientData.decode()
+        clientData = clientData.decode("utf-8")
+
 
         if(clientAddress[0] not in config.clientAddresses):
             if('HELLO-FROM' in clientData):
@@ -35,9 +36,9 @@ def main():
 
                 config.clientAddresses.update({clientData[1] : clientAddress})
 
-                UDPServerSocket.sendto('HELLO ' + clientData[1] + '\n', clientAddress)
+                UDPServerSocket.sendto(('HELLO ' + clientData[1] + '\n').encode("utf-8"), clientAddress)
 
-                clientThread = threading.Thread(target = player(), args = (clientAddress, UDPServerSocket))
+                clientThread = threading.Thread(target = player, args = (clientAddress, UDPServerSocket))
                 clientThread.start()
             else:
                 UDPServerSocket.sendto('BAD-RQST-HDR\n', clientAddress)
