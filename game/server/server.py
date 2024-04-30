@@ -2,21 +2,9 @@ import socket
 import threading
 import config
 
-def player(clientAddress, UDPServerSocket):
-    
-    while(True):
-        clientData, clientAddress =  UDPServerSocket.recvfrom(1024)
-        clientData.decode()
 
-        while(clientData and clientAddress):
-            if('SEND-SPEED' in clientData):
-                
-                clientData.strip()
-                clientData.split()
-
-                UDPServerSocket.sendto('SPEED-OK ' + clientData[0] + clientData[2] + '\n', clientAddress)
-            else:
-                pass
+def createGameLobby():
+    print("Lobby created.")
 
 def main():
 
@@ -25,24 +13,51 @@ def main():
     
     while(True):
         clientData, clientAddress =  UDPServerSocket.recvfrom(1024)
-        clientData = clientData.decode("utf-8")
+        clientData = clientData.decode()
 
+        print("Message received: " + clientData.strip())
+        splittedData = clientData.split()
 
-        if(clientAddress[0] not in config.clientAddresses):
-            if('HELLO-FROM' in clientData):
-                
-                clientData.strip()
-                clientData.split()
+        if('HELLO-FROM' in clientData):
+            if(splittedData[1] not in config.clientAddresses):
+                config.clientAddresses.update({splittedData[1]: clientAddress})
+                UDPServerSocket.sendto(('HELLO ' + splittedData[1] + '\n').encode(), clientAddress)
 
-                config.clientAddresses.update({clientData[1] : clientAddress})
+                print("Login successful.")
 
-                UDPServerSocket.sendto(('HELLO ' + clientData[1] + '\n').encode("utf-8"), clientAddress)
-
-                clientThread = threading.Thread(target = player, args = (clientAddress, UDPServerSocket))
-                clientThread.start()
             else:
                 UDPServerSocket.sendto('BAD-RQST-HDR\n', clientAddress)
+
+                print("Login unsuccessful.")
             
+        elif('LIST-LOBBY\n' in clientData):
+            lobbies = ''
+            for lobby in config.lobbies:
+                lobbies += lobby + " "
+            
+            UDPServerSocket.sendto('LIST-LOBBY ' + lobbies + '\n', clientAddress)
+                
+        elif('JOIN' in clientData):
+            if(splittedData[1] in config.lobbies):
+                config.lobbies.update({splittedData[1].append(clientAddress)})
+                UDPServerSocket.sendto(('JOIN-OK\n').encode(), clientAddress)
+
+                print("Joined lobby.")
+
+            else:
+                UDPServerSocket.sendto(('BAD-JOIN-RQST\n').encode(), clientAddress)
+
+                print("Lobby doesn't exist.")
+
+        elif('CREATE-LOBBY' in clientData):
+            UDPServerSocket.sendto(('CREATE-OK\n').encode(), clientAddress)
+                
+            clientThread = threading.Thread(target = createGameLobby, args = ())
+            clientThread.start()
+            
+        else:
+            pass     
+
 main()
 exit()
 

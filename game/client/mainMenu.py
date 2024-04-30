@@ -3,7 +3,7 @@ import sys
 import socket
 
 #<=== Server properties ===>#
-PORT = 8888
+PORT = 5378
 SERVER = '127.0.0.1'
 ADDR = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -115,11 +115,9 @@ while True:
                 name_text = name_text[:]
                 print(name_text)
                 print(user_text)
-                if name_text == '' or user_text == '':
-                    print("Something empty")
-                else:
-                    sendLobby(name_text,user_text)
-                    listen()
+        
+                sendLobby(name_text,user_text)
+                listen()
             elif joinLobby_rect.collidepoint(event.pos): 
                 print(joinName)
                 if joinName == '':
