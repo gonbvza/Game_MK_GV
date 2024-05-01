@@ -74,7 +74,7 @@ def main():
         #join lobby functionality
         elif('JOIN' in clientData):
             if(splittedData[1] in lobbies):
-                lobbies.update({splittedData[1].append([clientAddresses[clientAddress]])})
+                lobbies[splittedData[1]].append([clientAddresses[clientAddress]])
                 UDPServerSocket.sendto(('JOIN-OK\n').encode(), clientAddress)
 
                 print("Joined lobby.")
