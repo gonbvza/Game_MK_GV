@@ -3,8 +3,8 @@ import sys
 import socket
 
 #<=== Server properties ===>#
-PORT = 5378
-SERVER = '127.0.0.1'
+PORT = 8080
+SERVER = '192.168.1.231'
 ADDR = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 FORMAT = 'utf-8'
