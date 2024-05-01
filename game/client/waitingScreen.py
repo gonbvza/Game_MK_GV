@@ -74,10 +74,8 @@ while True:
 
     screen.fill(bg_color) 
     #<=== Render the main title and subtitle ===>#
-    text = fontTitle.render('Welcome to Pong', True, pygame.Color("white"))
-    textSub = fontSubTitle.render('Please login:', True, pygame.Color("white"))
-    displayTxt(text, 40)
-    displayTxt(textSub, 90)
+    text = fontTitle.render('Please wait while other players connect', True, pygame.Color("white"))
+    displayTxt(text, screen_height / 2)
     #<=== End of rendering the main title and subtitle ===>#
 
     for event in pygame.event.get(): 
@@ -85,41 +83,6 @@ while True:
         if event.type == pygame.QUIT: 
             pygame.quit() 
             sys.exit() 
-
-        if event.type == pygame.MOUSEBUTTONDOWN: 
-            if input_rect.collidepoint(event.pos): 
-                active = True
-            elif finish_rect.collidepoint(event.pos): 
-                user_text = user_text[:]
-                print(user_text)
-                sendLogin(user_text)
-                openGame()
-                
-            else:
-                active = False 
-
-        if event.type == pygame.KEYDOWN:
-            if active:
-                if event.key == pygame.K_RETURN:
-                    print(user_text)  # Here you can do whatever you want with the text
-                    user_text = ''
-                elif event.key == pygame.K_BACKSPACE:
-                    user_text = user_text[:-1]
-                elif len(user_text) < 4:
-                    user_text += event.unicode
-
-    if active: 
-        color = color_active 
-    else: 
-        color = color_passive 
-        
-    pygame.draw.rect(screen, color2, finish_rect) 
-    pygame.draw.rect(screen, border_color, input_rect, 2)  
-    pygame.draw.rect(screen, color, input_rect)
-    
-    text_surface = base_font.render(user_text, True, (255, 255, 255)) 
-    screen.blit(text_surface, (input_rect.x+5, input_rect.y+5)) 
-    input_rect.w = max(100, text_surface.get_width()+10) 
     
     pygame.display.flip() 
     clock.tick(60)

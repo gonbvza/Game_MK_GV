@@ -20,8 +20,8 @@ def displayTxt(obj, dst):
     screen.blit(obj, textRect)
 
 def sendLobby(name, users):
-    users = 4
     msg_to_send = f"CREATE-LOBBY {name} {users}\n"
+    print(msg_to_send)
     string_bytes = msg_to_send.encode("utf-8")
     client.sendto(string_bytes, ADDR)
 
