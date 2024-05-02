@@ -29,6 +29,7 @@ def createGameLobby(gameName, userAmount, gameHostAddress, UDPServerSocket):
     #intialize ball in the middle of the screen
     ballCoordinates = ['640', '480']
     
+
     #game loop
     while(True):
         pass
