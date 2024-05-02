@@ -94,8 +94,8 @@ def main():
             lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})
 
             #create a game specific thread
-            #clientThread = threading.Thread(target = createGameLobby, args = (splittedData[1], splittedData[2][:-1], clientAddress, UDPServerSocket))
-            #clientThread.start()
+            clientThread = threading.Thread(target = createGameLobby, args = (splittedData[1], splittedData[2][:-1], clientAddress, UDPServerSocket))
+            clientThread.start()
             
         else:
             pass     
