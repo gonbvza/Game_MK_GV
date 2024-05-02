@@ -8,15 +8,26 @@ SERVER = '127.0.0.1'
 ADDR = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 FORMAT = 'utf-8'
+Lobbies = []
 #<=== End server properties ===>#
 
 pygame.init() 
 
 clock = pygame.time.Clock() 
 #<=== Helper functions ===>#
-def displayTxt(obj, dst):
+def listenCalls():
+    data = client.recv(4096)
+    received = data.decode(FORMAT)
+    splitted = received.split()
+    print(received)
+
+    if splitted[0] == "CREATE-OK" or splitted[0] == "JOIN-OK":
+        print("went into ")
+        exec(open("waitingScreen.py").read())
+
+def displayTxt(obj, dst, x):
     textRect = obj.get_rect()
-    textRect.center = (screen_width // 2, 0 + dst)
+    textRect.center = (x, 0 + dst)
     screen.blit(obj, textRect)
 
 def sendLobby(name, users):
@@ -30,13 +41,26 @@ def sendLogin(name):
     string_bytes = msg_to_send.encode("utf-8")
     client.sendto(string_bytes, ADDR)
 
-def listen():
+def listRefresh():
+    global Lobbies
+    msg_to_send = f"LIST-LOBBY\n"
+    
+    string_bytes = msg_to_send.encode("utf-8")
+    client.sendto(string_bytes, ADDR)
+
     data = client.recv(4096)
     received = data.decode(FORMAT)
     splitted = received.split()
 
-    if splitted[0] == "CREATE-OK" or "JOIN-OK":
-        exec(open("waitingScreen.py").read())
+    if splitted[0] == "LIST-LOBBY":
+        print("Listed")
+        try:
+            if splitted[1]:
+                Lobbies = splitted[1:]
+        except IndexError as e:
+            print("No lobbies")
+
+listRefresh()
 #<=== End of helper functions ===>#
 
 #<=== Screen properties ===>#
@@ -61,6 +85,9 @@ lobbyName = pygame.Rect(screen_width / 2 + 180, 140, 300, 32)
 lobbyUsers = pygame.Rect(screen_width / 2 + 490, 140, 50, 32) 
 
 joinLobbyName = pygame.Rect(screen_width / 2 + 180, 185, 300, 32) 
+
+lobbies = pygame.Rect(screen_width / 2 - 250, 280, 500, 200) 
+refresh = pygame.Rect(screen_width / 2 + 50, 500, 200, 32) 
 
 color_active = pygame.Color('lightskyblue3') 
 color_passive = pygame.Color('grey30') 
@@ -90,8 +117,12 @@ while True:
     #<=== Render the main title and subtitle ===>#
     text = fontTitle.render('Welcome to Pong', True, pygame.Color("white"))
     textSub = fontSubTitle.render('Please choose an option', True, pygame.Color("white"))
-    displayTxt(text, 40)
-    displayTxt(textSub, 90)
+    textSub2 = fontSubTitle.render('Available lobbies', True, pygame.Color("white"))
+    refreshText = fontSubTitle.render('Refresh lobbies', True, pygame.Color("white"))
+    displayTxt(text, 40, screen_width // 2)
+    displayTxt(textSub, 90, screen_width // 2)
+    displayTxt(textSub2, 260, screen_width // 2)
+    
     #<=== End of rendering the main title and subtitle ===>#
 
     for event in pygame.event.get(): 
@@ -112,20 +143,22 @@ while True:
                 activeUser = True
             elif joinLobbyName.collidepoint(event.pos):
                 activeJoinName = True
+            elif refresh.collidepoint(event.pos):
+                listRefresh()
             elif createLobby_rect.collidepoint(event.pos): 
                 name_text = name_text[:]
                 print(name_text)
                 print(user_text)
         
                 sendLobby(name_text,user_text)
-                listen()
+                listenCalls()
             elif joinLobby_rect.collidepoint(event.pos): 
                 print(joinName)
                 if joinName == '':
                     print("Something empty")
                 else:
                     sendLogin(joinName)
-                    listen()
+                    listenCalls()
             else:
                 activeName = False 
                 activeUser = False
@@ -177,12 +210,24 @@ while True:
     pygame.draw.rect(screen, colorInputName, lobbyName)
     pygame.draw.rect(screen, colorInputUser, lobbyUsers)
     pygame.draw.rect(screen, colorJoinName, joinLobbyName)
+    pygame.draw.rect(screen, colorJoinName, lobbies)
+    pygame.draw.rect(screen, colorJoinName, refresh)
+    
 
     joinLobby_Text = fontSubTitle.render('Join lobby', True, pygame.Color("white"))
-    displayTxt(joinLobby_Text, 200)
+    displayTxt(joinLobby_Text, 200, screen_width // 2)
     createLobby_Text = fontSubTitle.render('Create lobby', True, pygame.Color("white"))
-    displayTxt(createLobby_Text, 156)
+    displayTxt(createLobby_Text, 156,  screen_width // 2)
+    displayTxt(refreshText, 520, (screen_width // 2) + 150)
     #<=== End of join and create lobby buttons ===>#
+
+    #<=== Display of lobbies ===>#
+    i = 0
+    for lob in Lobbies:
+        name = fontSubTitle.render(lob, True, pygame.Color("white"))
+        displayTxt(name, 300 + (i * 30), screen_width // 2)
+        i = i + 1
+
 
 
     text_surface = base_font.render(name_text, True, (255, 255, 255)) 

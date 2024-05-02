@@ -26,7 +26,6 @@ def sendLogin(ms):
     client.sendto(string_bytes, ADDR)
 
 def openGame():
-
     print("Receiving")
     data = client.recv(4096)
     received = data.decode(FORMAT)

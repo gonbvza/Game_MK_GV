@@ -64,11 +64,12 @@ def main():
 
         #list all current lobbies    
         elif('LIST-LOBBY' in clientData):
-            lobbies = ''
+            lobbiesNames = ''
             for lobby in lobbies:
-                lobbies += lobby + " "
+                lobbiesNames += lobby + " "
 
-            UDPServerSocket.sendto(('LIST-LOBBY ' + lobbies + '\n').encode(), clientAddress)
+            UDPServerSocket.sendto(('LIST-LOBBY ' + lobbiesNames + '\n').encode(), clientAddress)
+            print(lobbies)
         
         #join lobby functionality
         elif('JOIN' in clientData):
@@ -92,8 +93,8 @@ def main():
             lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})
 
             #create a game specific thread
-            clientThread = threading.Thread(target = createGameLobby, args = (splittedData[1], splittedData[2][:-1], clientAddress, UDPServerSocket))
-            clientThread.start()
+            #clientThread = threading.Thread(target = createGameLobby, args = (splittedData[1], splittedData[2][:-1], clientAddress, UDPServerSocket))
+            #clientThread.start()
             
         else:
             pass     
