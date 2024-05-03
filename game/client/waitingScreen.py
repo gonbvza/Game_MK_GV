@@ -63,6 +63,9 @@ border_color = pygame.Color('grey40')
 active = False
 #<=== End of username textbox properties ===># 
 
+#<=== Helper Functions ===>#
+
+#<=== End of helper functions ===>#
 
 #<=== Titles properties ===>#
 fontTitle = pygame.font.Font('freesansbold.ttf', 42)
@@ -84,5 +87,7 @@ while True:
             pygame.quit() 
             sys.exit() 
     
+    listenStart()
+
     pygame.display.flip() 
     clock.tick(60)
