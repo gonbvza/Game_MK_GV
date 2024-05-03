@@ -70,6 +70,18 @@ fontSubTitle = pygame.font.Font('freesansbold.ttf', 22)
 fontOptions = pygame.font.Font('freesansbold.ttf', 18)
 #<=== End of Titles properties ===>#
 
+def getting():
+    while(True):
+                print("Receiving")
+                data = client.recv(4096)
+                received = data.decode(FORMAT)
+                splitted = received.split()
+                
+                print("Received")
+                if splitted[0] == "GAME-START":
+                    exec(open("pong_fourPlayers.py").read())
+
+
 while True: 
 
     screen.fill(bg_color) 
@@ -77,12 +89,18 @@ while True:
     text = fontTitle.render('Please wait while other players connect', True, pygame.Color("white"))
     displayTxt(text, screen_height / 2)
     #<=== End of rendering the main title and subtitle ===>#
-
-    for event in pygame.event.get(): 
+    
+    for event in pygame.event.get():
 
         if event.type == pygame.QUIT: 
             pygame.quit() 
-            sys.exit() 
+            sys.exit()
+        
+        
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                getting()
+
     
     pygame.display.flip() 
     clock.tick(60)

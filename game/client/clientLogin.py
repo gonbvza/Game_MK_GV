@@ -30,7 +30,7 @@ def openGame():
     data = client.recv(4096)
     received = data.decode(FORMAT)
     splitted = received.split()
-
+    
     print("Received")
     if splitted[0] == "HELLO":
         exec(open("mainMenu.py").read())
@@ -95,7 +95,7 @@ while True:
                 openGame()
                 
             else:
-                active = False 
+                active = False
 
         if event.type == pygame.KEYDOWN:
             if active:
