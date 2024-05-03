@@ -1,46 +1,91 @@
 import socket
 import threading
+import json
 import time
+import pygame
 
 clientAddresses = {}
 lobbies = {}
+clientGameStates = {}
 
-def ballAnimation(state, UDPServerSocket, gameHostAddress):
+def playerAnimation(state,  playerName, speedType):
+        playerID = playerName
+        playerDir = state[speedType]
+        
+        print(playerDir)
 
-    if state["ball"][1] <= 0 or state["ball"][1] >= state["screenHeight"]:
-        state["ballSpeedY"] *= -1
-    
-    elif state["ball"][0] <= 0 or state["ball"][0] >= state["screenWidth"]:
-        state["ballSpeedX"] *= -1
+        detuple = list(state[playerID])
+        detuple[1] = detuple[1] + playerDir
 
-    detuple = list(state["ball"])
-    detuple[0] += state["ballSpeedX"]
-    detuple[1] += state["ballSpeedY"]
+        if detuple[1] <= 0:
+            detuple[1] = 0
+        
+        elif detuple[1] >= state["screenHeight"]:
+            detuple[1] = state["screenHeight"]
+        
+        tuple(detuple)
+        state[playerID] = detuple
+
+def ballAnimation(gameName):
+    if clientGameStates[gameName]["ball"][1] <= 0 or clientGameStates[gameName]["ball"][1] >= clientGameStates[gameName]["screenHeight"]:
+        clientGameStates[gameName]["ballSpeedY"] *= -1
+        
+    elif clientGameStates[gameName]["ball"][0] <= 0 or clientGameStates[gameName]["ball"][0] >= clientGameStates[gameName]["screenWidth"]:
+        clientGameStates[gameName]["ballSpeedX"] *= -1
+
+    detuple = list(clientGameStates[gameName]["ball"])
+    detuple[0] += clientGameStates[gameName]["ballSpeedX"]
+    detuple[1] += clientGameStates[gameName]["ballSpeedY"]
     tuple(detuple)
 
-    state["ball"] = detuple
+    if(detuple[0] >= clientGameStates[gameName]["screenWidth"]):
 
-    UDPServerSocket.sendto(("BALL-POSITION " + str(state["ball"][0]) + " " + str(state["ball"][1])).encode(), gameHostAddress)
-    
+        detuple[0] = clientGameStates[gameName]["screenWidth"] / 2
+        detuple[1] = clientGameStates[gameName]["screenWidth"] / 2
 
-def gameState(state, scoreboard, gameName, userAmount, gameHostAddress, UDPServerSocket):
+    elif(detuple[0] <= 0):
+        detuple[0] = clientGameStates[gameName]["screenWidth"] / 2
+        detuple[1] = clientGameStates[gameName]["screenWidth"] / 2
+
+    if(detuple[1] == clientGameStates[gameName]["player"][1]):
+        clientGameStates[gameName]["ballSpeedX"] *= -1
+
+    clientGameStates[gameName].update({"ball" : detuple})
+
+def send(gameName, gameHostAddress, UDPServerSocket):
+
+    while(True):
+        jsonString = json.dumps(clientGameStates[gameName])
+
+        UDPServerSocket.sendto(("DATA " + jsonString).encode(), gameHostAddress)
+
+        time.sleep(0.01)
+        ballAnimation(gameName)
+
+        playerAnimation(clientGameStates[gameName], "player", "playerSpeed")
+        
+def receive(gameName, gameHostAddress, UDPServerSocket):
 
     while(True):
         response, address = UDPServerSocket.recvfrom(1024)
         response = response.decode()
-        
-        if("-1" in response):
-            state["ballSpeedX"] *= -1
+        splittedResponse = response.split()
+        time.sleep(0.01)
 
-        elif("GET-BALL-POS" in response):
-            ballAnimation(state, UDPServerSocket, gameHostAddress)
+        if("pygame.KEYDOWN " in response):
+                
+            clientGameStates[gameName][splittedResponse[1]] = int(splittedResponse[2])
+            
+            print(clientGameStates[gameName][splittedResponse[1]])
 
-def createGameLobby(gameName, userAmount, gameHostAddress, UDPServerSocket):
+def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
 
     state = {
 
             "screenWidth" : 1280,
             "screenHeight" : 960,
+            "users" : userAmount,
+            "name" : gameName,
             "ball" : (1280/2 - 15, 960/2 - 15),
             "opponent" : (1280 - 20, 960/2 - 70),
             "player" :  (10, 960/2 - 70),
@@ -48,35 +93,18 @@ def createGameLobby(gameName, userAmount, gameHostAddress, UDPServerSocket):
             "opponentSpeed" : 0,
             "ballSpeedX" : -4,
             "ballSpeedY" : -2,
-
+            "socreboard" : {"player" : 0, "opponent" : 0}
         }
     
-    if(userAmount):
-        UDPServerSocket.sendto(("GAME-START\n").encode(), gameHostAddress)
     
-    scoreboard = {}
-    for player in lobbies[gameName]:
-        scoreboard.update({player : 0})
     
-    parameters = "width: " + str(state["screenWidth"]) + " "
-    parameters += "height: " + str(state["screenHeight"]) + " "
-    parameters += "ball: " + str(state["ball"][0]) + " " + str(state["ball"][1]) + " "
-    parameters += "opponent: " + str(state["opponent"][0]) + " " + str(state["opponent"][1]) + " "
-    parameters += "player: " + str(state["player"][0]) + " " + str(state["player"][1])
-    parameters += "\n"
+    clientGameStates.update({gameName : state})
+
+    receiving = threading.Thread(target = receive, args = (gameName, gameHostAddress, UDPServerSocket))
+    receiving.start()
     
-    UDPServerSocket.sendto(("SETUP " + parameters).encode(), gameHostAddress)
-
-    UDPServerSocket.sendto(("SCORE " + " " + str(0) + " " + str(0)).encode(), gameHostAddress)
-
-    velocities =  "player: " + str(state["playerSpeed"]) + " "
-    velocities += "opponent: " + str(state["opponentSpeed"]) + " "
-    velocities += "ball: " + str(state["ballSpeedX"]) + " " + str(state["ballSpeedY"]) + " "
-    velocities += "\n"
-
-    UDPServerSocket.sendto(("VELOCITY " + velocities).encode(), gameHostAddress)
-
-    gameState(state, scoreboard, gameName, userAmount, gameHostAddress, UDPServerSocket)
+    sending = threading.Thread(target = send, args = (gameName, gameHostAddress, UDPServerSocket))
+    sending.start()
 
 def main():
     global lobbies, clientAddresses
@@ -109,7 +137,7 @@ def main():
                 if(splittedData[1] in lobbies):
                     lobbies[splittedData[1]].append(clientAddresses[clientAddress])
                     UDPServerSocket.sendto(('JOIN-OK\n').encode(), clientAddress)
-
+                
                 else:
                     UDPServerSocket.sendto(('BAD-JOIN-RQST\n').encode(), clientAddress)
 
@@ -118,8 +146,8 @@ def main():
 
                 lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})
 
-                clientThread = threading.Thread(target = createGameLobby, args = (splittedData[1], splittedData[2], clientAddress, UDPServerSocket))
-                clientThread.start()
+                gameThread = threading.Thread(target = init, args = (splittedData[1], splittedData[2], clientAddress, UDPServerSocket))
+                gameThread.start()
                 
             else:
                 pass
