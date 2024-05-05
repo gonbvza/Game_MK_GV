@@ -45,7 +45,7 @@ def playerAnimation(gameName, state, playerName, speedType):
         state[playerID] = detuple
 
 def ballAnimation(gameName):
-    if clientGameStates[gameName]["ball"][1] <= 0 or clientGameStates[gameName]["ball"][1] >= clientGameStates[gameName]["screenHeight"]:
+    if clientGameStates[gameName]["ball"][1] <= 0 or clientGameStates[gameName]["ball"][1] +15 >= clientGameStates[gameName]["screenHeight"]:
         clientGameStates[gameName]["ballSpeedY"] *= -1
         
     elif clientGameStates[gameName]["ball"][0] <= 0 or clientGameStates[gameName]["ball"][0] >= clientGameStates[gameName]["screenWidth"]:
@@ -111,17 +111,17 @@ def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
 
             state = {
 
-                    "screenWidth" : 640,
-                    "screenHeight" : 480,
+                    "screenWidth" : 1280,
+                    "screenHeight" : 960,
                     "users" : userAmount,
                     "usernames" : lobbies[gameName],
                     "name" : gameName,
-                    "ball" : (640/2, 480/2),
+                    "ball" : (1280/2, 960/2),
                     "lastTouched" : 0,
                     "leftPaddle" : str(lobbies[gameName][1]),
                     "rightPaddle" : str(lobbies[gameName][0]),
-                    str(lobbies[gameName][0]) : (640- 20, 480/2 - 70),
-                    str(lobbies[gameName][1]) :  (10, 640/2 - 70),
+                    str(lobbies[gameName][0]) : (1280 - 20, 960/2 - 70),
+                    str(lobbies[gameName][1]) :  (10, 1280/2 - 70),
                     str(lobbies[gameName][0]) + "Speed" : 0,
                     str(lobbies[gameName][1]) + "Speed" : 0,
                     "ballSpeedX" : -4,
@@ -151,16 +151,18 @@ def main():
     global lobbies, clientAddresses
     
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    UDPServerSocket.bind(('192.168.1.231', 5378))
+    UDPServerSocket.bind(("127.0.0.1", 5378))
     try:
         while(True):
             clientData, clientAddress = UDPServerSocket.recvfrom(1024)
+
             clientData = clientData.decode()
             splittedData = clientData.split()
 
             if('HELLO-FROM' in clientData):
                 if(splittedData[1] not in clientAddresses):
                     clientAddresses.update({clientAddress : splittedData[1]})
+                    print(clientAddress)
                     UDPServerSocket.sendto(('HELLO ' + splittedData[1] + '\n').encode(), clientAddress)
 
                 else:
@@ -184,7 +186,8 @@ def main():
             elif('CREATE-LOBBY' in clientData):
                 UDPServerSocket.sendto(('CREATE-OK\n').encode(), clientAddress)
 
-                lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})
+                print([clientAddresses[clientAddress]])
+                lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})    
 
                 gameThread = threading.Thread(target = init, args = (splittedData[1], splittedData[2], clientAddress, UDPServerSocket))
                 gameThread.start()

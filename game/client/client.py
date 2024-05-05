@@ -10,6 +10,8 @@ fontOptions = pygame.font.Font('freesansbold.ttf', 18)
 clock = pygame.time.Clock()
 internalGameState = {}
 
+IP = "127.0.0.1"
+
 def receive(clientSocket):
     global internalGameState
     while(True):
@@ -32,12 +34,12 @@ def main():
     choice = input("Create lobby (Y/N): ")
 
     if(choice == "Y"):
-        clientSocket.sendto(("HELLO-FROM " + username).encode(), ("192.168.1.231", 5378))
-        clientSocket.sendto(("CREATE-LOBBY " + "myLobby" + " " + str(2)).encode(), ("192.168.1.231", 5378))
+        clientSocket.sendto(("HELLO-FROM " + username).encode(), (IP, 5378))
+        clientSocket.sendto(("CREATE-LOBBY " + "myLobby" + " " + str(2)).encode(), (IP, 5378))
     
     else:
-        clientSocket.sendto(("HELLO-FROM " + username).encode(), ("192.168.1.231", 5378))
-        clientSocket.sendto(("JOIN " + "myLobby").encode(), ("192.168.1.231", 5378))
+        clientSocket.sendto(("HELLO-FROM " + username).encode(), (IP, 5378))
+        clientSocket.sendto(("JOIN " + "myLobby").encode(), (IP, 5378))
 
     while(True):
         response, address = clientSocket.recvfrom(1024)
@@ -75,17 +77,17 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s:
                     print("Key is actively pressed")
-                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), ("192.168.1.231", 5378))
+                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (IP, 5378))
                     
                 if event.key == pygame.K_w:
-                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), ("192.168.1.231", 5378))
+                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (IP, 5378))
                     
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_s: 
-                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), ("192.168.1.231", 5378))
+                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (IP, 5378))
                     
                 if event.key == pygame.K_w:
-                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), ("192.168.1.231", 5378))
+                    clientSocket.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (IP, 5378))
             
         ball.x = internalGameState["ball"][0]
         ball.y = internalGameState["ball"][1]
