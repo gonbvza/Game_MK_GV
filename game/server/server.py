@@ -2,7 +2,6 @@ import socket
 import threading
 import json
 import time
-import pygame
 
 clientAddresses = {}
 lobbies = {}
@@ -91,7 +90,7 @@ def send(gameName, gameHostAddress, UDPServerSocket):
         time.sleep(0.01)
         ballAnimation(gameName)
         for user in lobbies[gameName]:
-            playerAnimation(gameName, clientGameStates[gameName], str(user), (str(user)+"Speed"))
+            playerAnimation(gameName, clientGameStates[gameName], str(user), (str(user) + "Speed"))
 
 def receive(gameName, gameHostAddress, UDPServerSocket):
 
@@ -126,7 +125,7 @@ def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
                     str(lobbies[gameName][1]) + "Speed" : 0,
                     "ballSpeedX" : -4,
                     "ballSpeedY" : -2,
-                    "scoreboard" : {str(lobbies[gameName][0]) : -1,
+                    "scoreboard" : {str(lobbies[gameName][0]) : 0,
                                     str(lobbies[gameName][1]) : 0}
                 }
             
