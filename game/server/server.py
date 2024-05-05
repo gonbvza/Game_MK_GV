@@ -18,12 +18,12 @@ def playerAnimation(gameName, state, playerName, speedType):
 
         if(clientGameStates[gameName]["leftPaddle"] == playerName):
             if((ballObj[0] <= clientXPosition)):
-                if(ballObj[1] >= clientYPositionMinus and ballObj[1] <= clientYPositionPlus):
+                if(ballObj[1] >= clientYPositionMinus  and ballObj[1] <= clientYPositionPlus):
                     clientGameStates[gameName]["ballSpeedX"] *= -1
                     clientGameStates[gameName]["lastTouched"] = playerName
 
         elif(clientGameStates[gameName]["rightPaddle"] == playerName):
-            if((ballObj[0] >= clientXPosition)):
+            if((ballObj[0] + 30 >= clientXPosition)):
                 if(ballObj[1] >= clientYPositionMinus and ballObj[1] <= clientYPositionPlus):
                     clientGameStates[gameName]["ballSpeedX"] *= -1
                     clientGameStates[gameName]["lastTouched"] = playerName
@@ -32,10 +32,16 @@ def playerAnimation(gameName, state, playerName, speedType):
         playerDir = state[speedType]
         
         detuple = list(state[playerID])
+        previousPo = detuple[1]
         detuple[1] = detuple[1] + playerDir
 
+        if abs(previousPo - detuple[1]) != 4 and abs(previousPo - detuple[1]) != 0:
+            clientGameStates[gameName]["hackerDetected"] = True
+        elif abs(previousPo - detuple[1]) == 4 or abs(previousPo - detuple[1]) == 0:
+            clientGameStates[gameName]["hackerDetected"] = False
+
         if detuple[1] <= 0:
-            detuple[1] = 0
+            detuple[1] = 1
         
         elif detuple[1] >= (state["screenHeight"] - 140):
             detuple[1] = state["screenHeight"] - 140
@@ -44,7 +50,7 @@ def playerAnimation(gameName, state, playerName, speedType):
         state[playerID] = detuple
 
 def ballAnimation(gameName):
-    if clientGameStates[gameName]["ball"][1] <= 0 or clientGameStates[gameName]["ball"][1] +15 >= clientGameStates[gameName]["screenHeight"]:
+    if clientGameStates[gameName]["ball"][1] <= 0 or clientGameStates[gameName]["ball"][1] + 15 >= clientGameStates[gameName]["screenHeight"]:
         clientGameStates[gameName]["ballSpeedY"] *= -1
         
     elif clientGameStates[gameName]["ball"][0] <= 0 or clientGameStates[gameName]["ball"][0] >= clientGameStates[gameName]["screenWidth"]:
@@ -98,8 +104,8 @@ def receive(gameName, gameHostAddress, UDPServerSocket):
         response, address = UDPServerSocket.recvfrom(1024)
         response = response.decode()
         splittedResponse = response.split()
-        time.sleep(0.01)
 
+        print(response)
         if("pygame.KEYDOWN " in response):
             clientGameStates[gameName][splittedResponse[1]] = int(splittedResponse[2])
 
@@ -110,8 +116,8 @@ def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
 
             state = {
 
-                    "screenWidth" : 1280,
-                    "screenHeight" : 960,
+                    "screenWidth" : 640,
+                    "screenHeight" : 480,
                     "users" : userAmount,
                     "usernames" : lobbies[gameName],
                     "name" : gameName,
@@ -119,14 +125,17 @@ def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
                     "lastTouched" : 0,
                     "leftPaddle" : str(lobbies[gameName][1]),
                     "rightPaddle" : str(lobbies[gameName][0]),
-                    str(lobbies[gameName][0]) : (1280 - 20, 960/2 - 70),
-                    str(lobbies[gameName][1]) :  (10, 1280/2 - 70),
+                    str(lobbies[gameName][0]) : (640 - 20, 480/2 - 70),
+                    str(lobbies[gameName][1]) :  (10, 640/2 - 70),
                     str(lobbies[gameName][0]) + "Speed" : 0,
                     str(lobbies[gameName][1]) + "Speed" : 0,
                     "ballSpeedX" : -4,
                     "ballSpeedY" : -2,
                     "scoreboard" : {str(lobbies[gameName][0]) : 0,
-                                    str(lobbies[gameName][1]) : 0}
+                                    str(lobbies[gameName][1]) : 0},
+                    "hackerDetected" : False,
+                    "userA" : lobbies[gameName][0],
+                    "userB" : lobbies[gameName][1]
                 }
             
             clientGameStates.update({gameName : state})
