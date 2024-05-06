@@ -7,8 +7,8 @@ import time
 import random
 
 #<=== Server properties ===>#
-PORT = 5378
-SERVER = '127.0.0.1'
+PORT = 10300
+SERVER = '84.125.157.181'
 ADDR = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 FORMAT = 'utf-8'
