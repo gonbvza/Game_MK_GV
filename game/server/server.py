@@ -5,14 +5,19 @@ import time
 
 clientAddresses = {}
 lobbies = {}
+availableLobbies = []
 clientGameStates = {}
 
 def playerAnimation(gameName, state, playerName, speedType):
         
         ballObj = clientGameStates[gameName]["ball"]
 
+
+
         clientYPositionMinus = clientGameStates[gameName][playerName][1] 
         clientYPositionPlus = clientGameStates[gameName][playerName][1] + 140
+
+
 
         clientXPosition = clientGameStates[gameName][playerName][0]
 
@@ -84,68 +89,73 @@ def ballAnimation(gameName):
     clientGameStates[gameName].update({"ball" : detuple})
 
 def send(gameName, gameHostAddress, UDPServerSocket):
-
+    
     while(True):
         jsonString = json.dumps(clientGameStates[gameName])
 
-        for user in lobbies[gameName]:
+        for user in lobbies[gameName][0]:
             for key, value in clientAddresses.items():
                 if value == user:
                     UDPServerSocket.sendto(("DATA " + jsonString).encode(), key)
 
         time.sleep(0.01)
         ballAnimation(gameName)
-        for user in lobbies[gameName]:
+        for user in lobbies[gameName][0]:
             playerAnimation(gameName, clientGameStates[gameName], str(user), (str(user) + "Speed"))
 
-def receive(gameName, gameHostAddress, UDPServerSocket):
+def receive(gameName, gameHostAddress, port):
+
+    gameSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    gameSock.bind(("192.168.0.24", port))
 
     while(True):
-        response, address = UDPServerSocket.recvfrom(1024)
+        response, address = gameSock.recvfrom(1024)
         response = response.decode()
         splittedResponse = response.split()
 
-        print(response)
         if("pygame.KEYDOWN " in response):
             clientGameStates[gameName][splittedResponse[1]] = int(splittedResponse[2])
 
-def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
-
+def init(gameName, userAmount, gameHostAddress, port,UDPServerSocket):
+    global availableLobbies
     while(True):
-        if(len(lobbies[gameName]) == int(userAmount)):
+        if(len(lobbies[gameName][0]) == int(userAmount)):
 
             state = {
 
                     "screenWidth" : 640,
                     "screenHeight" : 480,
                     "users" : userAmount,
-                    "usernames" : lobbies[gameName],
+                    "usernames" : lobbies[gameName][0],
                     "name" : gameName,
                     "ball" : (1280/2, 960/2),
                     "lastTouched" : 0,
-                    "leftPaddle" : str(lobbies[gameName][1]),
-                    "rightPaddle" : str(lobbies[gameName][0]),
-                    str(lobbies[gameName][0]) : (640 - 20, 480/2 - 70),
-                    str(lobbies[gameName][1]) :  (10, 640/2 - 70),
-                    str(lobbies[gameName][0]) + "Speed" : 0,
-                    str(lobbies[gameName][1]) + "Speed" : 0,
+                    "leftPaddle" : str(lobbies[gameName][0][1]),
+                    "rightPaddle" : str(lobbies[gameName][0][0]),
+                    str(lobbies[gameName][0][0]) : (640 - 20, 480/2 - 70),
+                    str(lobbies[gameName][0][1]) :  (10, 640/2 - 70),
+                    str(lobbies[gameName][0][0]) + "Speed" : 0,
+                    str(lobbies[gameName][0][1]) + "Speed" : 0,
                     "ballSpeedX" : -4,
                     "ballSpeedY" : -2,
-                    "scoreboard" : {str(lobbies[gameName][0]) : 0,
-                                    str(lobbies[gameName][1]) : 0},
+                    "scoreboard" : {str(lobbies[gameName][0][0]) : 0,
+                                    str(lobbies[gameName][0][1]) : 0},
                     "hackerDetected" : False,
-                    "userA" : lobbies[gameName][0],
-                    "userB" : lobbies[gameName][1]
+                    "userA" : lobbies[gameName][0][0],
+                    "userB" : lobbies[gameName][0][1],
+                    "new" : True
                 }
             
             clientGameStates.update({gameName : state})
 
-            for user in lobbies[gameName]:
+            for user in lobbies[gameName][0]:
                 for key, value in clientAddresses.items():
                     if value == user:
                         UDPServerSocket.sendto(("GAME-START\n").encode(), key)
+                        if gameName in availableLobbies:
+                            availableLobbies.remove(gameName)
 
-            receiving = threading.Thread(target = receive, args = (gameName, gameHostAddress, UDPServerSocket))
+            receiving = threading.Thread(target = receive, args = (gameName, gameHostAddress, port))
             receiving.start()
             
             sending = threading.Thread(target = send, args = (gameName, gameHostAddress, UDPServerSocket))
@@ -156,8 +166,10 @@ def init(gameName, userAmount, gameHostAddress, UDPServerSocket):
             pass
 
 def main():
-    global lobbies, clientAddresses
+    global lobbies, clientAddresses,availableLobbies
     
+    port = 10301
+
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     UDPServerSocket.bind(("192.168.0.24", 10300))
     try:
@@ -170,7 +182,7 @@ def main():
             if('HELLO-FROM' in clientData):
                 if(splittedData[1] not in clientAddresses):
                     clientAddresses.update({clientAddress : splittedData[1]})
-                    print(clientAddress)
+
                     UDPServerSocket.sendto(('HELLO ' + splittedData[1] + '\n').encode(), clientAddress)
 
                 else:
@@ -178,28 +190,32 @@ def main():
     
             elif('LIST-LOBBY' in clientData):
                 lobbiesNames = ''
-                for lobby in lobbies:
+                for lobby in availableLobbies:
                     lobbiesNames += lobby + " "
 
                 UDPServerSocket.sendto(('LIST-LOBBY ' + lobbiesNames + '\n').encode(), clientAddress)
             
             elif('JOIN' in clientData):
                 if(splittedData[1] in lobbies): 
-                    lobbies[splittedData[1]].append(clientAddresses[clientAddress])
-                    UDPServerSocket.sendto(('JOIN-OK\n').encode(), clientAddress)
+                    lobbies[splittedData[1]][0].append(clientAddresses[clientAddress])
+                    gamePort = lobbies[splittedData[1]][1]
+                    UDPServerSocket.sendto((f'JOIN-OK {gamePort}\n').encode(), clientAddress)
 
                 else:
                     UDPServerSocket.sendto(('BAD-JOIN-RQST\n').encode(), clientAddress)
 
             elif('CREATE-LOBBY' in clientData):
-                UDPServerSocket.sendto(('CREATE-OK\n').encode(), clientAddress)
+                UDPServerSocket.sendto((f'CREATE-OK {port}\n').encode(), clientAddress)
 
-                print([clientAddresses[clientAddress]])
-                lobbies.update({splittedData[1] : [clientAddresses[clientAddress]]})    
 
-                gameThread = threading.Thread(target = init, args = (splittedData[1], splittedData[2], clientAddress, UDPServerSocket))
+                lobbies.update({splittedData[1] : [[clientAddresses[clientAddress]],port]}) 
+                
+                availableLobbies.append(splittedData[1])   
+
+                gameThread = threading.Thread(target = init, args = (splittedData[1], splittedData[2], clientAddress, port, UDPServerSocket))
                 gameThread.start()
                 
+                port += 1
             else:
                 pass
     except KeyboardInterrupt:

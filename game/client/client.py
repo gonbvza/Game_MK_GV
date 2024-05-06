@@ -8,6 +8,7 @@ import random
 
 #<=== Server properties ===>#
 PORT = 10300
+gamePort = ''
 SERVER = '84.125.157.181'
 ADDR = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -23,12 +24,18 @@ pygame.init()
 
 clock = pygame.time.Clock() 
 #<=== Helper functions ===>#
+fontSubTitle = pygame.font.Font('freesansbold.ttf', 22)
+def display_alert(message):
+    alert_text = fontSubTitle.render(message, True, (255,0,0))
+    alert_rect = alert_text.get_rect(center=(screen_width // 2, screen_height // 2))
+    screen.blit(alert_text, alert_rect)
+
 def startMatch():
     global gameStart
     data = client.recv(4096)
     received = data.decode(FORMAT)
     splitted = received.split()
-    print(received)
+
 
     if splitted[0] == "GAME-START":
         gameStart = True
@@ -52,7 +59,7 @@ def listenCalls():
     data = client.recv(4096)
     received = data.decode(FORMAT)
     splitted = received.split()
-    print(received)
+
 
     if splitted[0] == "CREATE-OK" or splitted[0] == "JOIN-OK":
         print("went into ")
@@ -65,7 +72,7 @@ def displayTxt(obj, dst, x):
 
 def sendLobby(name, users):
     msg_to_send = f"CREATE-LOBBY {name} {users}\n"
-    print(msg_to_send)
+
     string_bytes = msg_to_send.encode("utf-8")
     client.sendto(string_bytes, ADDR)
 
@@ -101,29 +108,11 @@ def receive(clientSocket):
         response = response.decode()
 
         if dropPackets:
+
             randNum = random.randint(1, 5)
             
             if randNum == 1:
-                userA = internalGameState["userA"]
-                userB = internalGameState["userB"]
-                userASpeed = internalGameState[userA+"Speed"]
-                userBSpeed = internalGameState[userB+"Speed"]
-
-                detuple = list(internalGameState[userA])
-                detuple[1] = detuple[1] + userASpeed
-                tuple(detuple)
-                internalGameState[userA] = detuple
-
-                detuple = list(internalGameState[userB])
-                detuple[1] = detuple[1] + userBSpeed
-                tuple(detuple)
-                internalGameState[userB] = detuple
-
-                detuple = list(internalGameState["ball"])
-                detuple[0] += internalGameState["ballSpeedX"]
-                detuple[1] += internalGameState["ballSpeedY"]
-                tuple(detuple)
-                internalGameState.update({"ball" : detuple})
+                pass
             else:
                 if("DATA" in response):
                     response = response.replace("DATA ", "")
@@ -136,6 +125,38 @@ def receive(clientSocket):
                     internalGameState = json.loads(response)
             else:
                 pass
+        time.sleep(0.01)
+       
+            
+def deadReck():
+    time.sleep(0.001)
+    while True:
+        if internalGameState["new"] == False:
+            userA = internalGameState["userA"]
+            userB = internalGameState["userB"]
+            userASpeed = internalGameState[userA+"Speed"]
+            userBSpeed = internalGameState[userB+"Speed"]
+
+            detuple = list(internalGameState[userA])
+            detuple[1] = detuple[1] + userASpeed
+            tuple(detuple)
+            internalGameState[userA] = detuple
+
+            detuple = list(internalGameState[userB])
+            detuple[1] = detuple[1] + userBSpeed
+            tuple(detuple)
+            internalGameState[userB] = detuple
+
+            detuple = list(internalGameState["ball"])
+            detuple[0] += internalGameState["ballSpeedX"]
+            detuple[1] += internalGameState["ballSpeedY"]
+            tuple(detuple)
+            internalGameState.update({"ball" : detuple})
+        else:
+            pass
+
+        time.sleep(0.01)
+
 #<=== End of helper functions ===>#
 
 #<=== Screen properties ===>#
@@ -190,7 +211,6 @@ activeJoinName = False
 
 #<=== Titles properties ===>#
 fontTitle = pygame.font.Font('freesansbold.ttf', 42)
-fontSubTitle = pygame.font.Font('freesansbold.ttf', 22)
 fontOptions = pygame.font.Font('freesansbold.ttf', 18)
 hacker = pygame.font.Font('freesansbold.ttf', 70)
 #<=== End of Titles properties ===>#
@@ -311,16 +331,19 @@ while True:
                 name_text = name_text[:]
                 print(name_text)
                 print(user_num)
-        
-                sendLobby(name_text,user_num)
-                
-                data = client.recv(4096)
-                received = data.decode(FORMAT)
-                splitted = received.split()
-                print(received)
+                if name_text == '' or user_num == '':
+                    display_alert("enter all details")
+                else: 
+                    sendLobby(name_text,user_num)
+                    
+                    data = client.recv(4096)
+                    received = data.decode(FORMAT)
+                    splitted = received.split()
+                    print(received)
 
-                if splitted[0] == "CREATE-OK" or splitted[0] == "JOIN-OK":
-                    endSecondLoop = True
+                    if splitted[0] == "CREATE-OK" or splitted[0] == "JOIN-OK":
+                        endSecondLoop = True
+                        gamePort = splitted[1]
 
             elif joinLobby_rect.collidepoint(event.pos): 
                 print(joinName)
@@ -334,6 +357,7 @@ while True:
                     print(received)
 
                     if splitted[0] == "CREATE-OK" or splitted[0] == "JOIN-OK":
+                        gamePort = splitted[1]
                         endSecondLoop = True
 
             else:
@@ -456,6 +480,9 @@ while True:
 receiving = threading.Thread(target = receive, args = (client, ))
 receiving.start()
 
+receiving = threading.Thread(target = deadReck, args = ())
+receiving.start()
+
 time.sleep(1)
 
 screen_width = internalGameState["screenWidth"]
@@ -480,21 +507,25 @@ while(True):
         
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_s:
-                print("Key is actively pressed")
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, 5378))
+
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, int(gamePort)))
+                print("upward sent to " )
+                print((SERVER, int(gamePort)))
                 
             if event.key == pygame.K_w:
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, 5378))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, int(gamePort)))
         
             if event.key == pygame.K_h:
                 print("Key is actively pressed")
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(6)).encode(), (SERVER, 5378))
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(6)).encode(), (SERVER, 5378))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(6)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(6)).encode(), (SERVER, int(gamePort)))
 
             if event.key == pygame.K_y:
                 print("Key is actively pressed")
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-6)).encode(), (SERVER, 5378))
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-6)).encode(), (SERVER, 5378))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-6)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-6)).encode(), (SERVER, int(gamePort)))
 
             if event.key == pygame.K_l:
                 dropPackets = True
@@ -502,10 +533,12 @@ while(True):
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_s:
                 print("Key is actively pressed")
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, 5378))
-                       
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
+                
             if event.key == pygame.K_w:
-                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, 5378))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
+                client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
 
             if event.key == pygame.K_l:
                 dropPackets = False
@@ -537,6 +570,7 @@ while(True):
         scorePosition += 20
         screen.blit(ScoreTop, textRect)
 
+    internalGameState["new"] = False
     pygame.display.flip()
     clock.tick(60)
 
