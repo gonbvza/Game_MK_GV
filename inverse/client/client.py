@@ -36,7 +36,6 @@ def startMatch():
     received = data.decode(FORMAT)
     splitted = received.split()
 
-
     if splitted[0] == "GAME-START":
         gameStart = True
 
@@ -132,20 +131,20 @@ def deadReck():
     time.sleep(0.001)
     while True:
         if internalGameState["new"] == False:
-            userA = internalGameState["userA"]
-            userB = internalGameState["userB"]
-            userASpeed = internalGameState[userA+"Speed"]
-            userBSpeed = internalGameState[userB+"Speed"]
+            userC = internalGameState["userC"]
+            userD = internalGameState["userD"]
+            userCSpeed = internalGameState[userC+"Speed"]
+            userDSpeed = internalGameState[userD+"Speed"]
 
-            detuple = list(internalGameState[userA])
-            detuple[1] = detuple[1] + userASpeed
+            detuple = list(internalGameState[userC])
+            detuple[1] = detuple[1] + userCSpeed
             tuple(detuple)
-            internalGameState[userA] = detuple
+            internalGameState[userC] = detuple
 
-            detuple = list(internalGameState[userB])
-            detuple[1] = detuple[1] + userBSpeed
+            detuple = list(internalGameState[userD])
+            detuple[1] = detuple[1] + userDSpeed
             tuple(detuple)
-            internalGameState[userB] = detuple
+            internalGameState[userD] = detuple
 
             detuple = list(internalGameState["ball"])
             detuple[0] += internalGameState["ballSpeedX"]
@@ -492,10 +491,10 @@ screen_height = internalGameState["screenHeight"]
 playerName = str(internalGameState["usernames"][0])
 opponentName = str(internalGameState["usernames"][1])
 
-
 ball = pygame.Rect(internalGameState["ball"][0], internalGameState["ball"][1], 30, 30)
-opponent = pygame.Rect(internalGameState[opponentName][0], internalGameState[opponentName][1], 10,140)
-player = pygame.Rect(internalGameState[playerName][0], internalGameState[playerName][1], 10,140)
+opponent = pygame.Rect(internalGameState[opponentName][0], internalGameState[opponentName][1], 140,10)
+player = pygame.Rect(internalGameState[playerName][0], internalGameState[playerName][1], 140,10)
+
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 
@@ -508,14 +507,14 @@ while(True):
             sys.exit()
         
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_d:
 
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, int(gamePort)))
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(4)).encode(), (SERVER, int(gamePort)))
                 print("upward sent to " )
                 print((SERVER, int(gamePort)))
                 
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_a:
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, int(gamePort)))
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(-4)).encode(), (SERVER, int(gamePort)))
         
@@ -533,12 +532,12 @@ while(True):
                 dropPackets = True
 
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_d:
                 print("Key is actively pressed")
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
                 
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_a:
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
                 client.sendto(("pygame.KEYDOWN " + username + "Speed" + " " + str(0)).encode(), (SERVER, int(gamePort)))
 

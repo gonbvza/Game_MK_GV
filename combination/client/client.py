@@ -6,7 +6,6 @@ import json
 import time
 import random
 
-#<=== Server properties ===>#
 PORT = 10300
 gamePort = ''
 SERVER = '127.0.01'
@@ -18,7 +17,6 @@ gameStart = False
 username = ''
 internalGameState = {}
 dropPackets = False
-#<=== End server properties ===>#
 
 pygame.init() 
 
@@ -109,7 +107,7 @@ def receive(clientSocket):
 
         if dropPackets:
 
-            randNum = random.randint(1, 5)
+            randNum = random.randint(1, 2)
             
             if randNum == 1:
                 pass
@@ -131,11 +129,15 @@ def receive(clientSocket):
 def deadReck():
     time.sleep(0.001)
     while True:
-        if internalGameState["new"] == False:
+        if internalGameState["timeToLive"] == False:
             userA = internalGameState["userA"]
             userB = internalGameState["userB"]
+            userC = internalGameState["userC"]
+            userD = internalGameState["userD"]
             userASpeed = internalGameState[userA+"Speed"]
             userBSpeed = internalGameState[userB+"Speed"]
+            userCSpeed = internalGameState[userC+"Speed"]
+            userDSpeed = internalGameState[userD+"Speed"]
 
             detuple = list(internalGameState[userA])
             detuple[1] = detuple[1] + userASpeed
@@ -146,6 +148,16 @@ def deadReck():
             detuple[1] = detuple[1] + userBSpeed
             tuple(detuple)
             internalGameState[userB] = detuple
+
+            detuple = list(internalGameState[userC])
+            detuple[1] = detuple[1] + userCSpeed
+            tuple(detuple)
+            internalGameState[userC] = detuple
+
+            detuple = list(internalGameState[userD])
+            detuple[1] = detuple[1] + userDSpeed
+            tuple(detuple)
+            internalGameState[userD] = detuple
 
             detuple = list(internalGameState["ball"])
             detuple[0] += internalGameState["ballSpeedX"]
@@ -166,7 +178,7 @@ screen_height = 960
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("My pong")
 bg_color = pygame.Color('grey12')
-#<=== Screen properties ===>#
+#<=== Screen properties ===>#
 
 
 #<=== Username textbox properties ===>#
@@ -433,8 +445,6 @@ while True:
         displayTxt(name, 300 + (i * 30), screen_width // 2)
         i = i + 1
 
-
-
     text_surface = base_font.render(name_text, True, (255, 255, 255)) 
     screen.blit(text_surface, (lobbyName.x+5, lobbyName.y+5)) 
     lobbyName.w = max(300, text_surface.get_width()+10) 
@@ -492,10 +502,22 @@ screen_height = internalGameState["screenHeight"]
 playerName = str(internalGameState["usernames"][0])
 opponentName = str(internalGameState["usernames"][1])
 
-
 ball = pygame.Rect(internalGameState["ball"][0], internalGameState["ball"][1], 30, 30)
 opponent = pygame.Rect(internalGameState[opponentName][0], internalGameState[opponentName][1], 10,140)
 player = pygame.Rect(internalGameState[playerName][0], internalGameState[playerName][1], 10,140)
+
+if(internalGameState["users"] == "3"):
+    topName = str(internalGameState["usernames"][2])
+    top = pygame.Rect(internalGameState[topName][0], internalGameState[topName][1], 140,10)
+
+if(internalGameState["users"] == "4"):
+
+    topName = str(internalGameState["usernames"][2])
+    bottomName = str(internalGameState["usernames"][3])
+
+    top = pygame.Rect(internalGameState[topName][0], internalGameState[topName][1], 140,10)
+    bottom = pygame.Rect(internalGameState[bottomName][0], internalGameState[bottomName][1], 140,10)
+
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 
@@ -557,13 +579,31 @@ while(True):
     
     opponent.x = internalGameState[opponentName][0]
     opponent.y = internalGameState[opponentName][1]
-    
 
+    if(internalGameState["users"] == "3"):
+        top.x = internalGameState[topName][0]
+        top.y = internalGameState[topName][1]
+
+    if(internalGameState["users"] == "4"):
+        top.x = internalGameState[topName][0]
+        top.y = internalGameState[topName][1]
+        
+        bottom.x = internalGameState[bottomName][0]
+        bottom.y = internalGameState[bottomName][1]
+    
     screen.fill(pygame.Color('grey12'))
     pygame.draw.aaline(screen, (200,200,200), (screen_width/2, 0), (screen_width/2, screen_height))
     pygame.draw.rect(screen, (200,200,200), player)
     pygame.draw.rect(screen, (200,200,200), opponent)
     pygame.draw.ellipse(screen, (200,200,200), ball)
+
+    if(internalGameState["users"] == "3"):
+        pygame.draw.rect(screen, (200,200,200), top)
+
+
+    if(internalGameState["users"] == "4"):
+        pygame.draw.rect(screen, (200,200,200), top)
+        pygame.draw.rect(screen, (200,200,200), bottom)
 
     scorePosition = 20
     for item in internalGameState["usernames"]:
@@ -574,7 +614,7 @@ while(True):
             scorePosition += 20
             screen.blit(ScoreTop, textRect)
 
-    internalGameState["new"] = False
+    internalGameState["timetoLive"] = False
     pygame.display.flip()
     clock.tick(60)
 
